@@ -5,18 +5,21 @@ import java.io.*;
 import java.util.*;
 
 public class GomokuServer {
-	private ServerSocket welcomeSocket;
-	private Broadcaster messageBroadcaster = new Broadcaster();
+	private ServerSocket welcomeSocket;							//listening socket for server
+	private Broadcaster messageBroadcaster = new Broadcaster(); //message broadcaster initialize
 	
+	//main method
 	public static void main(String[] args) {
 		GomokuServer server = new GomokuServer();
 		server.startServer();
 	}
 	
+	//constructor for server
 	public GomokuServer() {
 		
 	}
 	
+	//start server and make new userSocket thread
 	void startServer() {
 		try {
 			welcomeSocket = new ServerSocket(6789);
@@ -35,12 +38,12 @@ public class GomokuServer {
 		}
 	}
 	
-	
-	class serverThread extends Thread{
-		private Socket userSocket;
-		private boolean isReady = false;
-		private BufferedReader fromClient;
-		private PrintWriter toClient;
+	//userSocket thread implementing Thread class
+	class serverThread extends Thread {
+		private Socket userSocket;			//user socket
+		private boolean isReady = false;	//boolean value for storing user 'game ready' status
+		private BufferedReader fromClient;	//reader for client message
+		private PrintWriter toClient;		//writer for server message
 		
 		serverThread(Socket socket){
 			userSocket = socket;
@@ -54,6 +57,7 @@ public class GomokuServer {
 			return isReady;
 		}
 		
+		//run thread
 		@Override
 		public void run() {
 			try {
@@ -85,6 +89,11 @@ public class GomokuServer {
 					
 					//if message is stone, broadcast x, y coordinate to opponent client
 					else if(messageFromClient.startsWith("[STONE]")) {
+						messageBroadcaster.sendToOpponent(this, messageFromClient);
+					}
+					
+					//if message is timeout, skip player turn and start opponent turn
+					else if(messageFromClient.startsWith("[TIMEOUT]")) {
 						messageBroadcaster.sendToOpponent(this, messageFromClient);
 					}
 						
@@ -137,19 +146,23 @@ public class GomokuServer {
 		}
 	}
 	
-	
+	//Broadcaster class for broadcasting messages to opponent player
+	//Broadcaster implements ArrayList to contain each player's information(socket value, game ready status)
+	@SuppressWarnings("serial")
 	class Broadcaster extends ArrayList {
+		
 		//constructor of Broadcaster
 		Broadcaster() {
 			
 		}
 		
-		
+		//add thread information of player to Broadcaster list
+		@SuppressWarnings("unchecked")
 		void add(serverThread thread) {
 			super.add(thread);
 		}
 		
-		
+		//remove thread information of player from Broadcaster list
 		void remove(serverThread thread) {
 			super.remove(thread);
 		}
@@ -164,7 +177,7 @@ public class GomokuServer {
 			return getThread(i).getSocket();
 		}
 		
-		
+		//send message to client
 		void sendToClient(int i, String msg) {
 			try {
 				PrintWriter toUser = new PrintWriter(getSocket(i).getOutputStream(), true);
@@ -175,13 +188,14 @@ public class GomokuServer {
 			}
 		}
 		
+		//send message to 'opponent' player's client
 		void sendToGame(String msg) {
 			for(int i = 0; i < size(); i++) {
 				sendToClient(i, msg);
 			}
 		}
 		
-		
+		//send message to 'opponent' player
 		void sendToOpponent(serverThread thread, String msg) {
 			for(int i = 0; i < size(); i++) {
 				if(getThread(i) != thread) {
@@ -190,7 +204,7 @@ public class GomokuServer {
 			}
 		}		
 		
-		
+		//check if all players are ready
 		synchronized boolean isReady() {
 			int count = 0;
 			

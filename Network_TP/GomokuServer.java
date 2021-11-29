@@ -4,6 +4,21 @@ import java.net.*;
 import java.io.*;
 import java.util.*;
 
+/**
+ * Network Term project_ Team 8_ Gomoku Game
+ * 
+ * Server side for network-based gomoku game
+ * 
+ * Features:
+ * Broadcast messages to client side
+ * Synchronization implemented for appropriate server-client message handling
+ * 
+ * 
+ * @author H.Jaeh, K.Minkyung, K.Younjeong, P.Chaerim, H.Younki
+ * Last Changed: NOV. 28. 2021 
+ *
+ */
+
 public class GomokuServer {
 	private ServerSocket welcomeSocket;							//listening socket for server
 	private Broadcaster messageBroadcaster = new Broadcaster(); //message broadcaster initialize
@@ -148,7 +163,6 @@ public class GomokuServer {
 	
 	//Broadcaster class for broadcasting messages to opponent player
 	//Broadcaster implements ArrayList to contain each player's information(socket value, game ready status)
-	@SuppressWarnings("serial")
 	class Broadcaster extends ArrayList {
 		
 		//constructor of Broadcaster
@@ -157,7 +171,6 @@ public class GomokuServer {
 		}
 		
 		//add thread information of player to Broadcaster list
-		@SuppressWarnings("unchecked")
 		void add(serverThread thread) {
 			super.add(thread);
 		}
@@ -205,6 +218,7 @@ public class GomokuServer {
 		}		
 		
 		//check if all players are ready
+		//synchronized implemented for tracking ready count appropriately
 		synchronized boolean isReady() {
 			int count = 0;
 			

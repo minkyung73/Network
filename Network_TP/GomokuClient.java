@@ -230,6 +230,14 @@ class DrawBoard extends Canvas{
       }
    }
    
+   //draw board
+   private void drawBoardGraphic(Graphics board) {
+	      boardGUIBuffer.clearRect(0, 0, getWidth(), getHeight());
+	      drawLine();
+	      drawStone();
+	      board.drawImage(boardGUIImage, 0, 0, this);
+   }
+
    //check if player has won
    //white stone can win with more than 6 stones in a row
    private boolean winCheck(Point p, int color) {

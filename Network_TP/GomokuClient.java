@@ -5,12 +5,31 @@ import java.awt.event.*;
 import java.net.*;
 import java.io.*;
 import java.util.*;
-
 import javax.swing.JOptionPane;
+
+/**
+ * Network Term project_ Team 8_ Gomoku Game
+ * 
+ * Client side for network-based gomoku game
+ * 
+ * Features:
+ * Free renju rule applicated:
+ * -No 3-3 or 4-4 forms allowed for black stone.
+ * -No 6-or-more stones allowed for black stone.
+ * -White stone does not affected by rules above.
+ * 
+ * Player have 5 seconds to place its stone
+ * 
+ * GUI based program-intuitive stone identification, easy-to-place
+ * 
+ * 
+ * @author H.Jaeh, K.Minkyung, K.Younjeong, P.Chaerim, H.Younki
+ * Last Changed: NOV. 28. 2021 
+ *
+ */
 
 //DrawBoard class for drawing gomoku board
 //and implementing winner check feature
-@SuppressWarnings("serial")
 class DrawBoard extends Canvas{
    public static boolean timerStart = false;	//boolean value for starting timer
    public static boolean timerEnd = false;		//boolean value for ending timer
@@ -63,9 +82,6 @@ class DrawBoard extends Canvas{
                return;
             }
             
-            //create point object of the stone's location
-            //Point stoneLocation = new Point(x, y);
-            
             //check if player attempts to place stone on a prohibited location
             if(prohibitionTest(new Point(x, y), myColor)) {
                return;
@@ -97,6 +113,10 @@ class DrawBoard extends Canvas{
    
    public void setTimer() {
 	   timerStart = true;
+   }
+   
+   public int timerReset() {
+      return 20;
    }
    
    //return game status
@@ -261,16 +281,16 @@ class DrawBoard extends Canvas{
       else if (winCheck(p, col))
          return false;
       else {
-         //check for 6 stones or more in a row
+         //check for prohibited moves
          int result = 0;
          result += fourORjang1(p, col, 2);
          result += fourORjang2(p, col, 2);
          result += fourORjang3(p, col, 2);
          result += fourORjang4(p, col, 2);   
-         //if one or more 6>in a row is detected
+         //if prohibited moves are detected
          if(result >= 1)
             return true;
-         //check for 4-4 form
+         //check for 4-4 form or 6 or more stones in a row
          int fourStone = 0;
          fourStone += fourORjang1(p, col, 1);
          fourStone += fourORjang2(p, col, 1);
@@ -278,7 +298,7 @@ class DrawBoard extends Canvas{
          fourStone += fourORjang4(p, col, 1);
          if (fourStone >= 2)
             return true;
-         //check for 3-3 form
+         //check for open 3
          int open_sam_count = 0;
          open_sam_count += find3_1(p, col);
          open_sam_count += find3_2(p, col);
@@ -297,30 +317,27 @@ class DrawBoard extends Canvas{
       int stone1 = 0;
       int stone2 = 0;
       int allStone = 0;
-      // 열린 3인지 체크하기위한것..
+      //check for open 3
       int blink1 = 1;
       int xx = p.x - 1;
       boolean check = false;
       // ←
       left: while (true) {
-         // 좌표끝도달
+         //if x axis hit end
          if (xx == 0)
             break left;
 
-         // check를 false로 바꿈으로 두번연속으로 만나는지 확인할수있게.
+         //if opponent stone found, stop searching
          if (board[xx][p.y] == col) {
             check = false;
             stone1++;
          }
 
-         // 상대돌을 만나면 탐색중지
+         //if one or more blank spots found, stop searching and reset blink counter
          if (board[xx][p.y] == -1 * col)
             break left;
 
          if (board[xx][p.y] == 0) {
-            // 처음 빈공간을만나 check가 true가 됬는데
-            // 연달아 빈공간을만나면 탐색중지
-            // 두번연속으로 빈공간만날시 blink카운트를 되돌림.
             if (check == false) {
                check = true;
             } else {
@@ -331,20 +348,19 @@ class DrawBoard extends Canvas{
             if (blink1 == 1) {
                blink1--;
             } else {
-               break left; // 빈공간을만났으나 빈공간을 두번만나면 끝임
+               break left;
             }
          }
-         // 계속탐색
+         //keep searching
          xx--;
       }
       // →
-      xx = p.x + 1; // 달라지는 좌표
-      int blink2 = blink1; // blink1남은거만큼 blink2,
-      if (blink1 == 1) // 빈공간을 만나지않은경우 없었음을기록
+      xx = p.x + 1; //change coordinate
+      int blink2 = blink1; //copy blink1 to blink2 
+      if (blink1 == 1) //if no blank spots found, reset blink1
          blink1 = 0;
       check = false;
       right: while (true) {
-         // 좌표끝도달
          if (xx == boardSize + 1)
             break right;
 
@@ -353,12 +369,10 @@ class DrawBoard extends Canvas{
             stone2++;
          }
 
-         // 상대돌을 만나면 탐색중지
          if (board[xx][p.y] == -1 * col)
             break right;
 
          if (board[xx][p.y] == 0) {
-            // 두번연속으로 빈공간만날시 blink카운트를 되돌림.
             if (check == false) {
                check = true;
             } else {
@@ -369,30 +383,28 @@ class DrawBoard extends Canvas{
             if (blink2 == 1) {
                blink2--;
             } else {
-               break right; // 빈공간을만났으나 빈공간을 두번만나면 끝임
+               break right;
             }
          }
          xx++;
       }
       allStone = stone1 + stone2;
-      // 삼삼이므로 돌갯수가 2 + 1(현재돌)이아니면 0리턴
-      // 이부분이 43을 허용하게해줌. 33만 찾게됨
+      //3-3form detected
       if (allStone != 2) {
          return 0;
       }
-      // 돌갯수가 3이면 열린 3인지 파악.
-
+      //check for open 3
       int left = (stone1 + blink1);
       int right = (stone2 + blink2);
 
-      // 벽으로 막힌경우 - 열린3이 아님
+      //if 3 stones hit end - not open 3
       if (p.x - left == 1 || p.x + right == boardSize) {
          return 0;
-      } else // 상대돌로 막힌경우 - 열린3이 아님
+      } else //if 3 stones hit opponent stone - not open 3
       if (board[p.x - left - 1][p.y] == -1 * col || board[p.x + right + 1][p.y] == -1 * col) {
          return 0;
       } else {
-         return 1; // 열린3 일때 1 리턴
+         return 1; //if open 3, return 1
       }
    }
 
@@ -684,15 +696,14 @@ class DrawBoard extends Canvas{
 
    }
 
-   //check for 6 or more stones in a row, horizontal
+   //check for 4-4 form/6 or more stones in a row, horizontal
    private int fourORjang1(Point p, int col, int trigger) {
       int stone1 = 0;
       int stone2 = 0;
       int allStone = 0;
-      // 열린4인지는 상관은없음. 다만 코드상 빈공간만을 의미.
       int blink1 = 1;
 
-      // ← 탐색
+      // ←
       int yy = p.y;
       int xx = p.x - 1;
       boolean check = false;
@@ -709,7 +720,6 @@ class DrawBoard extends Canvas{
             break left;
 
          if (board[xx][yy] == 0) {
-            // 두번연속으로 빈공간만날시 blink카운트를 되돌림.
             if (check == false) {
                check = true;
             } else {
@@ -720,7 +730,7 @@ class DrawBoard extends Canvas{
             if (blink1 == 1) {
                blink1--;
             } else {
-               break left; // 빈공간을만났으나 빈공간을 두번만나면 끝임
+               break left;
             }
 
          }
@@ -728,7 +738,7 @@ class DrawBoard extends Canvas{
          xx--;
       }
 
-      // → 탐색
+      // →
       xx = p.x + 1;
       yy = p.y;
       int blink2 = blink1;
@@ -765,27 +775,27 @@ class DrawBoard extends Canvas{
 
       allStone = stone1 + stone2;
 
-      // 사사찾는 트리거
+      //trigger for 4-4 form detection
       if (trigger == 1) {
          if (allStone != 3)
-            return 0; // 놓은돌제외 3개아니면 4가아니니까.
+            return 0; //if stones except recently placed stone is not 3 - not 4-4
          else
-            return 1; // 놓은돌제외 3개면 4임. 닫히고 열린지는 상관없음.
+            return 1; //if stones except recently placed stone is 3 - 4-4
       }
 
-      // 장목찾는 트리거
+      //check for 6 or more stones in a row
       if (trigger == 2) {
-         // 현재놓은돌 +1 +5 => 6목이상은 장목. 여기서 놓은돌기준 두방향모두 돌이있어야 장목
+         //if stones except recently placed stone is 5 - 6 or more stones in a row
          if (allStone >= 5 && stone1 != 0 && stone2 != 0)
             return 1;
          else
             return 0;
       }
-      // 그럴일을없지만 1 도 2도아니면 0리턴
+      //default return
       return 0;
    }
    
-   //check for 6 or more stones in a row, diagonal
+   //check for 4-4 form/6 or more stones in a row, diagonal
    private int fourORjang2(Point p, int col, int trigger) {
 
       int stone1 = 0;
@@ -793,7 +803,7 @@ class DrawBoard extends Canvas{
       int allStone = 0;
       int blink1 = 1;
 
-      // ↙ 탐색
+      // ↙
       int yy = p.y - 1;
       int xx = p.x - 1;
       boolean check = false;
@@ -829,7 +839,7 @@ class DrawBoard extends Canvas{
          yy--;
       }
 
-      // ↗ 탐색
+      // ↗
       yy = p.y + 1;
       xx = p.x + 1;
       check = false;
@@ -883,14 +893,14 @@ class DrawBoard extends Canvas{
       return 0;
    }
 
-   //check for 6 or more stones in a row, vertical
+   //check for 4-4 form/6 or more stones in a row, vertical
    private int fourORjang3(Point p, int col, int trigger) {
       int stone1 = 0;
       int stone2 = 0;
       int allStone = 0;
       int blink1 = 1;
 
-      // ↓ 탐색
+      // ↓
       int yy = p.y - 1;
       int xx = p.x;
       boolean check = false;
@@ -925,7 +935,7 @@ class DrawBoard extends Canvas{
          yy--;
       }
 
-      // ↑ 탐색
+      // ↑
       yy = p.y + 1;
       xx = p.x;
       check = false;
@@ -977,7 +987,7 @@ class DrawBoard extends Canvas{
       return 0;
    }
 
-   //check for 6 or more stones in a row, diagonal
+   //check for 4-4 form/6 or more stones in a row, diagonal
    private int fourORjang4(Point p, int col, int trigger) {
 
       int stone1 = 0;
@@ -985,7 +995,7 @@ class DrawBoard extends Canvas{
       int allStone = 0;
       int blink1 = 1;
 
-      // ↘ 탐색
+      // ↘
       int yy = p.y - 1;
       int xx = p.x + 1;
       boolean check = false;
@@ -1021,7 +1031,7 @@ class DrawBoard extends Canvas{
          yy--;
       }
 
-      // ↖ 탐색
+      // ↖
       yy = p.y - 1;
       xx = p.x - 1;
       check = false;
@@ -1092,22 +1102,20 @@ class DrawBoard extends Canvas{
 
 //GomokuClient class for creating client GUI window and
 //implementing server-client connection features
-@SuppressWarnings("serial")
 public class GomokuClient extends Frame implements Runnable, ActionListener {
-   private TextArea messageWindow = new TextArea("", 1, 1, 1);
-   private TextArea ruleWindow = new TextArea(
-         "Rules:\nThis game uses Free Renju rule.\n1. Black is permitted from using 3-3 or 4-4.\n2. Black is permitted from putting 6 or more stones.\n3. Players have 30 seconds each turn.\n");
-   private Button startButton = new Button("Start Game");
-   private Button resignButton = new Button("Resign Game");
-   private DrawBoard board = new DrawBoard(15, 30);
-   private BufferedReader fromServer;
-   private PrintWriter toServer;
-   private Socket clientSocket;
-
-   public Panel timePanel = new Panel();
-   private static int time_limit = 20;
-   public int myCount = time_limit;
-   public int timeSub = 1;
+   private TextArea messageWindow = new TextArea("", 1, 1, 1);	//textarea for viewing server messages 
+   private TextArea ruleWindow = new TextArea(					//textarea for viewing rules
+         "Rules:\nThis game uses Free Renju rule.\n1. Black stone is prohibited from using 3-3 or 4-4.\n2. Black stone is prohibited from putting 6 or more stones.\n3. Players have 30 seconds each turn.\n");
+   private Button startButton = new Button("Start Game");		//game start button to know if player is ready
+   private Button resignButton = new Button("Resign Game");		//resign button for player resign
+   private DrawBoard board = new DrawBoard(15, 30);				//create gomoku board object
+   private BufferedReader fromServer;							//reader for server message
+   private PrintWriter toServer;								//writer to send message to server
+   private Socket clientSocket;									//client socket object
+   public Panel timePanel = new Panel();						//timer panel
+   private static int time_limit = 30;							//time for each player to place a stone, 5 seconds
+   public int myCount = time_limit;								//player's time left
+   public int timeSub = 1;										//iterator for decreasing time of timer
    
    
    // client constructor
@@ -1115,6 +1123,8 @@ public class GomokuClient extends Frame implements Runnable, ActionListener {
       super(title);
       setLayout(null);
 
+      //set GUI component's attributes
+      //append GUI components to client window
       ruleWindow.setEditable(false);
       messageWindow.setEditable(false);
       board.setLocation(10, 70);
@@ -1141,6 +1151,9 @@ public class GomokuClient extends Frame implements Runnable, ActionListener {
 
                timeLabel.setText("Time left: " + myCount);
                myCount = myCount - timeSub;
+               
+               if(DrawBoard.timerEnd == true) {
+               }
                
                if (myCount < 0) {
                   timeLabel.setText("Time Over");
@@ -1179,6 +1192,7 @@ public class GomokuClient extends Frame implements Runnable, ActionListener {
       startButton.addActionListener(this);
       resignButton.addActionListener(this);
       
+      //delete thread when player close the client window
       addWindowListener(new WindowAdapter() {
          public void windowClosing(WindowEvent close) {
             System.exit(0);
@@ -1244,8 +1258,8 @@ public class GomokuClient extends Frame implements Runnable, ActionListener {
       String messageFromServer;
       
       try {
-         while((messageFromServer = fromServer.readLine()) != null) {
-        	 
+         while((messageFromServer = fromServer.readLine()) != null) {  	 
+        	//parse server message        	 
         	//if message is stone, draw opponent stone and player can now place stone
             if(messageFromServer.startsWith("[STONE]")) {
                String temp = messageFromServer.substring(7);
@@ -1257,7 +1271,7 @@ public class GomokuClient extends Frame implements Runnable, ActionListener {
                board.setPlayerTurn(true);              
 			} 
             
-            
+            //if message is timeout, enable player turn and start timer
             else if (messageFromServer.startsWith("[TIMEOUT]")) {
                 DrawBoard.timeout = false;
             	board.setTimer();

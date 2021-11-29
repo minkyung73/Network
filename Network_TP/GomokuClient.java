@@ -18,7 +18,7 @@ import javax.swing.JOptionPane;
  * -No 6-or-more stones allowed for black stone.
  * -White stone does not affected by rules above.
  * 
- * Player have 5 seconds to place its stone
+ * Player have 30 seconds to place its stone
  * 
  * GUI based program-intuitive stone identification, easy-to-place
  * 
